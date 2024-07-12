@@ -18,7 +18,7 @@ export const Participantes = () => {
     const fetchAlumnos = async () => {
         console.log("Enviando request al backend");
         try {
-            const response = await fetch('http://40.76.107.0:5000/alumnos', {
+            const response = await fetch('http://localhost:5000/alumnos', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
