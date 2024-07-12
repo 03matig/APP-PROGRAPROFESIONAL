@@ -55,7 +55,7 @@ export const Pasantia = () => {
 
         try {
             console.debug("Enviando request al backend...");
-            const response = await fetch('http://40.76.107.0:5000/upload', {
+            const response = await fetch('http://localhost:5000/upload', {
                 method: 'POST',
                 body: formData,
                 onUploadProgress: (progressEvent) => {
@@ -82,7 +82,7 @@ export const Pasantia = () => {
 
     const handleFileDelete = async () => {
         try {
-            const response = await fetch(`http://40.76.107.0:5000/delete?userId=${userId}`, {
+            const response = await fetch(`http://localhost:5000/delete?userId=${userId}`, {
                 method: 'DELETE',
             });
 

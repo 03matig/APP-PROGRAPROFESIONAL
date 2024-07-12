@@ -20,7 +20,7 @@ export const VistaCrearZoom = () => {
     useEffect(() => {
         const fetchUsuarios = async () => {
             try {
-                const response = await fetch('http://40.76.107.0:5000/pasantias_pendientes', {
+                const response = await fetch('http://localhost:5000/pasantias_pendientes', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
