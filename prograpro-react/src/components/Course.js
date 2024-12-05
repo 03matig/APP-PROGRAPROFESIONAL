@@ -70,28 +70,28 @@ return (
                                                     </a>
                                         </li>
                                         <li data-key="participants" className="nav-item" role="none" data-forceintomoremenu="false" title="Participantes">
-                                                    <a onClick={handleViewParticipants} role="menuitem" className="nav-link  " href="#" tabindex="-1">
+                                                    <a onClick={handleViewParticipants} role="menuitem" className="nav-link  " href="#" tabIndex="-1">
                                                         Participantes
                                                     </a>
                                         </li>
                                         <li data-key="grades" className="nav-item" role="none" data-forceintomoremenu="false" title="Calificaciones">
-                                                    <a role="menuitem" className="nav-link  " href="https://webc.uai.cl/grade/report/index.php?id=8075" tabindex="-1">
+                                                    <a role="menuitem" className="nav-link  " href="https://webc.uai.cl/grade/report/index.php?id=8075" tabIndex="-1">
                                                         Calificaciones
                                                     </a>
                                         </li>
                                         <li data-key="competencies" className="nav-item" role="none" data-forceintomoremenu="false" title="Competencias">
-                                                    <a role="menuitem" className="nav-link  " href="https://webc.uai.cl/admin/tool/lp/coursecompetencies.php?courseid=8075" tabindex="-1">
+                                                    <a role="menuitem" className="nav-link  " href="https://webc.uai.cl/admin/tool/lp/coursecompetencies.php?courseid=8075" tabIndex="-1">
                                                         Competencias
                                                     </a>
                                         </li>
                                         
                             <li role="none" className="nav-item dropdown dropdownmoremenu" data-region="morebutton">
-                                <a className="dropdown-toggle nav-link " href="#" id="moremenu-dropdown-660c83787c4fc" role="menuitem" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tabindex="-1">
+                                <a className="dropdown-toggle nav-link " href="#" id="moremenu-dropdown-660c83787c4fc" role="menuitem" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" tabIndex="-1">
                                     <span className="edw edw-icon-more"></span>
                                 </a>
                                 <ul className="dropdown-menu dropdown-menu-left" data-region="moredropdown" aria-labelledby="moremenu-dropdown-660c83787c4fc" role="menu">
                                 <li data-key="unenrolself" className="nav-item" role="none" data-forceintomoremenu="true" title="Darme de baja en pasantia-1-1-2024">
-                                                    <a role="menuitem" className="dropdown-item" href="https://webc.uai.cl/enrol/self/unenrolself.php?enrolid=32703" tabindex="-1">
+                                                    <a role="menuitem" className="dropdown-item" href="https://webc.uai.cl/enrol/self/unenrolself.php?enrolid=32703" tabIndex="-1">
                                                         Darme de baja en pasantia-1-1-2024
                                                     </a>
                                         </li></ul>
@@ -159,7 +159,7 @@ return (
                                                                                                     Foro
                                                                                                 </div>
                                                                                                 <div className="activityname h-bold-4 color-font-headings">
-                                                                                                                <a href="https://webc.uai.cl/mod/forum/view.php?id=332560" className=" aalink stretched-link" onclick="">        <span className="instancename">Avisos <span className="accesshide "> Foro</span></span>    </a>
+                                                                                                                <a href="https://webc.uai.cl/mod/forum/view.php?id=332560" className=" aalink stretched-link" >        <span className="instancename">Avisos <span className="accesshide "> Foro</span></span>    </a>
                                                                                                             
                                                                                                 </div>
                                                                                             </div>
@@ -193,7 +193,7 @@ return (
                                                                                                     Recurso
                                                                                                 </div>
                                                                                                 <div className="activityname h-bold-4 color-font-headings">
-                                                                                                                <a href="https://webc.uai.cl/mod/resource/view.php?id=344094" className=" aalink stretched-link" onclick="">        <span className="instancename">PROGRAMA DEL CURSO <span className="accesshide "> Archivo</span></span>    </a>
+                                                                                                                <a href="https://webc.uai.cl/mod/resource/view.php?id=344094" className=" aalink stretched-link" >        <span className="instancename">PROGRAMA DEL CURSO <span className="accesshide "> Archivo</span></span>    </a>
                                                                                                             
                                                                                                 </div>
                                                                                             </div>
@@ -432,4 +432,3 @@ return (
     </div>
 )
 }
-

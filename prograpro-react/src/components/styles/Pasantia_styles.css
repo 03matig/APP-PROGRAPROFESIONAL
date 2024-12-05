@@ -413,27 +413,30 @@ tr {
     border-color: inherit;
 }
 
+/* Añade estilos adicionales si es necesario */
+
 .modal {
     display: flex;
     align-items: center;
     justify-content: center;
-    position: fixed; 
-    z-index: 1000; 
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.4); 
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
     padding-top: 60px;
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: 5% auto; 
+    margin: 5% auto;
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
+    text-align: center; /* Centrar el contenido */
 }
 
 .close {
@@ -448,4 +451,17 @@ tr {
     color: black;
     text-decoration: none;
     cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
 }

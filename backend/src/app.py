@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, redirect, url_for, session
+from flask import Flask, request, jsonify, redirect, url_for, session, send_file
 from requests_oauthlib import OAuth2Session
 from flask_pymongo import PyMongo
 from flask_cors import CORS
@@ -8,12 +8,15 @@ from bson import ObjectId, Binary
 from bson.json_util import dumps
 import logging
 import os
+import random
+import gridfs
+import io
 
 # Establezco la instancia y la llamo por medio de una variable.
 app = Flask(__name__)
 app.config['MONGO_URI'] = 'mongodb+srv://MatiasGarin:31102023@cluster0.hck92kq.mongodb.net/Universidad'
 app.config['JWT_SECRET_KEY'] = 'JSONWebToken_secret_key'
-#app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SECRET_KEY'] = os.urandom(24)
 app.secret_key = os.urandom(24)
 
 # Instanciamos y definimos variables
@@ -21,7 +24,7 @@ mongo = PyMongo(app)
 bcrypt = Bcrypt(app)
 
 #Configuraciones
-CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+CORS(app, supports_credentials=True)
 jwt = JWTManager(app)
 # oauth = OAuth(app)
 
@@ -30,6 +33,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Base de Datos
 db = mongo.db
+fs = gridfs.GridFS(db)
 
 # Configuraciones de Zoom
 
@@ -62,7 +66,7 @@ scopes = [
 ]
 
 
-def crear_usuario_automatico(username, nombre, password, carrera, año, rol):
+def create_user_auto(username, nombre, password, carrera, año, rol):
     #Hashear y saltear la contraseña
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
@@ -78,7 +82,7 @@ def crear_usuario_automatico(username, nombre, password, carrera, año, rol):
 
 
 # Crear usuario automáticamente al iniciar la aplicación Flask
-def crear_usuarios_automaticamente():
+def create_users_auto():
     # Datos de los usuarios a crear
     usuarios = [
         {'username': 'magarin@alumnos.uai.cl', 'nombre': 'Matías Garín', 'password': 'testpassword1', 'carrera': 'Ingeniería Civil Informática', 'año': '4to año','rol': 'alumno'},
@@ -94,14 +98,14 @@ def crear_usuarios_automaticamente():
 
     # Crear los usuarios
     for usuario_data in usuarios:
-        crear_usuario_automatico(usuario_data['username'], usuario_data['nombre'], usuario_data['password'], usuario_data['carrera'], usuario_data['año'], usuario_data['rol'])
+        create_user_auto(usuario_data['username'], usuario_data['nombre'], usuario_data['password'], usuario_data['carrera'], usuario_data['año'], usuario_data['rol'])
         print(f"Created user with username {usuario_data['username']}")
 
-#crear_usuarios_automaticamente()
+#create_users_auto()
 
 #Acá verificaré la creación automática del usuario
-@app.route('/verificar_usuario_automatico', methods=['GET'])
-def verificar_creacion_automatica():
+@app.route('/verify_auto_creation', methods=['GET'])
+def verify_auto_creation():
     # Obtener el usuario creado automáticamente
     usuario = db.users.find_one({'username': 'magarin@alumnos.uai.cl'})
 
@@ -111,7 +115,7 @@ def verificar_creacion_automatica():
     else:
         return jsonify({'message': 'No se encontró el usuario creado automáticamente'})
 
-
+# Consultas API para la funcionalidad del Inicio de Sesión con Hash + Salt y Sanitización
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -141,6 +145,7 @@ def login():
                 'access_token': access_token,
                 '_id': str(user['_id']),
                 'nombre': user['nombre'],
+                'carrera': user['carrera'],
                 'rol': user['rol'],
             }), 200
         else:
@@ -159,7 +164,7 @@ def get_user_role():
         return jsonify({'role': user.get('rol')}), 200
     else:
         return jsonify({'error': 'User not found'}), 404
-      
+
 # Consultas API para la funcionalidad de Crear Links de Zoom:
 @app.route('/zoom/login')
 def zoom_login():
@@ -236,7 +241,54 @@ def create_meeting():
 
     return jsonify(response.json())
 
-# Consultas API para la funcionalidad de Crear Comisiones:
+@app.route('/pasantias_pendientes', methods=['GET'])
+def pasantias_pendientes():
+    comisiones = db.Comisiones.find({})
+    usuarios = [{"id": str(comision["_id"]), "nombre": comision["nombre"]} for comision in comisiones]
+    return jsonify(usuarios), 200
+
+@app.route('/post_zoom_link', methods=['POST'])
+def post_zoom_link():
+    data = request.get_json()
+    nombre_alumno = data.get('nombre_alumno')
+    zoom_link = data.get('zoom_link')
+
+    if not nombre_alumno or not zoom_link:
+        return jsonify({'error': 'Nombre del alumno y link de Zoom son requeridos'}), 400
+
+    result = db.Comisiones.update_one(
+        {'nombre': nombre_alumno},
+        {'$set': {'internship-defense.internship-defense-zoom': zoom_link}}
+    )
+
+    if result.modified_count == 0:
+        return jsonify({'error': 'No se encontró al alumno o no se pudo actualizar'}), 404
+
+    return jsonify({'message': 'Link de Zoom actualizado correctamente'}), 200
+
+# Notificaciones respecto de la API de Zoom:
+
+@app.route('/get_notifications', methods=['GET'])
+def get_notifications():
+    user_id = request.args.get('user_id')
+    
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
+    
+    user = db.Comisiones.find_one({'id': user_id})
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    notifications = []
+    
+    if user.get('internship-defense', {}).get('internship-defense-zoom'):
+        notifications.append(f"Se le asignó una reunión para su defensa de pasantía: {user['internship-defense']['internship-defense-zoom']}")
+    
+    return jsonify({'notifications': notifications}), 200
+
+
+# Consultas API para la funcionalidad de Crear Comisiones
 @app.route('/alumnos', methods=['GET'])
 def get_alumnos():
     alumnos = db.Comisiones.find({"rol": "alumno"})
@@ -251,6 +303,12 @@ def get_alumnos():
                 "Profesor N°1": {"id": "", "Nombre": "", "Carrera": ""},
                 "Profesor N°2": {"id": "", "Nombre": "", "Carrera": ""},
                 "Profesor N°3": {"id": "", "Nombre": "", "Carrera": ""}
+            }),
+            "internship-defense": alumno.get("internship-defense", {
+                "upload-report-deadline": "", 
+                "internship-report-pdf": "", 
+                "internship-defense-date": "",
+                "internship-defense-zoom": ""
             })
         })
     return jsonify(alumnos_list), 200
@@ -263,64 +321,118 @@ def inscribir_profesor():
     profesor_nombre = data['profesor_nombre']
     profesor_carrera = data['profesor_carrera']
 
-    # Buscar la comisión del alumno
     comision = db.Comisiones.find_one({'username': alumno_username})
 
     if not comision:
         return jsonify({'error': 'Comisión no encontrada'}), 404
 
+    # Limpiar las entradas vacías de profesores
+    comision['profesores-a-cargo'] = {k: v for k, v in comision['profesores-a-cargo'].items() if v['id']}
 
-    # Contar el número de profesores ya inscritos
-    profesores_inscritos = len([prof for prof in comision['profesores-a-cargo'].values() if prof['Nombre']])
-    
+    profesores_inscritos = len(comision['profesores-a-cargo'])
+
     if profesores_inscritos >= 3:
         return jsonify({'error': 'La comisión ya tiene 3 profesores inscritos'}), 400
 
-    # Verificar si el profesor ya está inscrito
     for prof in comision['profesores-a-cargo'].values():
         if prof['id'] == profesor_id:
             return jsonify({'error': 'El profesor ya está inscrito en esta comisión'}), 400
 
-    # Verificar si ya hay un profesor con la misma carrera
-    carreras_profesores = [prof['Carrera'] for prof in comision['profesores-a-cargo'].values() if prof['Nombre']]
-    if profesor_carrera not in carreras_profesores and len(carreras_profesores) < 2:
-        # Inscribir al profesor en el siguiente puesto disponible
-        for key, prof in comision['profesores-a-cargo'].items():
-            if not prof['Nombre']:
-                comision['profesores-a-cargo'][key] = {
-                    'id': profesor_id,
-                    'Nombre': profesor_nombre,
-                    'Carrera': profesor_carrera
-                }
-                break
-    else:
-        if profesor_carrera in carreras_profesores and profesores_inscritos < 3:
-            for key, prof in comision['profesores-a-cargo'].items():
-                if not prof['Nombre']:
-                    comision['profesores-a-cargo'][key] = {
-                        'id': profesor_id,
-                        'Nombre': profesor_nombre,
-                        'Carrera': profesor_carrera
-                    }
-                    break
-        elif profesores_inscritos == 2 and profesor_carrera not in carreras_profesores:
-            for key, prof in comision['profesores-a-cargo'].items():
-                if not prof['Nombre']:
-                    comision['profesores-a-cargo'][key] = {
-                        'id': profesor_id,
-                        'Nombre': profesor_nombre,
-                        'Carrera': profesor_carrera,
-                        'President': 'yes'
-                    }
-                    break
+    # Verificar si el profesor debe ser presidente
+    presidente = 'no'
+    if profesor_carrera == comision['carrera']:
+        if not any(prof.get('President') == 'yes' for prof in comision['profesores-a-cargo'].values()):
+            presidente = 'yes'
+
+    comision['profesores-a-cargo'][f'Profesor N°{profesores_inscritos + 1}'] = {
+        'id': profesor_id,
+        'Nombre': profesor_nombre,
+        'Carrera': profesor_carrera,
+        'President': presidente
+    }
 
     db.Comisiones.update_one(
         {'username': alumno_username},
         {'$set': {'profesores-a-cargo': comision['profesores-a-cargo']}}
     )
 
-    return jsonify({'message': 'Profesor inscrito con éxito'}), 200
+    return jsonify({'message': 'Profesor inscrito con éxito', 'presidente': presidente == 'yes'}), 200
+
+# Consultas API para la funcionalidad de Subir, borrar y descargar archivos PDF.
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    user_id = request.form['userId']
+    file = request.files['internship-report-pdf']
     
+    if file:
+        # Guardar el archivo en MongoDB usando GridFS
+        file_id = fs.put(file, filename=file.filename, user_id=user_id)
+        
+        # Actualizar la base de datos con el ID del archivo
+        db.Comisiones.update_one(
+            {'id': user_id},
+            {'$set': {'internship-defense.internship-report-pdf': str(file_id)}}
+        )
+        
+        user_document = db.Comisiones.find_one({'id': user_id})
+        if user_document:
+            print(f"Document: {user_document['internship-defense']}")
+
+        return jsonify({"message": "Archivo subido exitosamente"}), 200
+    else:
+        return jsonify({"message": "No se encontró el archivo"}), 400
+
+@app.route('/delete', methods=['DELETE'])
+def delete_file():
+    user_id = request.args.get('userId')
+    
+    # Buscar el documento del usuario
+    user_document = db.Comisiones.find_one({'id': user_id})
+    
+    if user_document and 'internship-defense' in user_document:
+        file_id = user_document['internship-defense'].get('internship-report-pdf')
+        
+        if file_id:
+            # Eliminar el archivo de GridFS
+            fs.delete(ObjectId(file_id))
+            
+            # Actualizar el documento del usuario
+            db.Comisiones.update_one(
+                {'id': user_id},
+                {'$unset': {'internship-defense.internship-report-pdf': ""}}
+            )
+            
+            return jsonify({"message": "Archivo borrado exitosamente"}), 200
+        else:
+            return jsonify({"message": "No se encontró el archivo para borrar"}), 404
+    else:
+        return jsonify({"message": "No se encontró el documento del usuario"}), 404
+    
+@app.route('/download_pdf', methods=['GET'])
+def download_pdf():
+    file_id = request.args.get('fileId')
+    if not file_id:
+        print("No se proporcionó fileId")
+        return jsonify({"message": "fileId es requerido"}), 400
+
+    try:
+        print(f"Buscando archivo con _id: {file_id}")
+        file = fs.get(ObjectId(file_id))
+        print(f"Archivo encontrado: {file.filename}")
+        return send_file(
+            io.BytesIO(file.read()),
+            download_name=file.filename,  # Usar el nombre original del archivo
+            as_attachment=True
+        )
+    except gridfs.errors.NoFile:
+        print(f"No se encontró el archivo con _id: {file_id}")
+        return jsonify({"message": "No se encontró el archivo"}), 404
+    except Exception as e:
+        print(f"Error al descargar el archivo: {e}")
+        return jsonify({"message": "Error al descargar el archivo", "error": str(e)}), 500
+   
+
+# Pruebas iniciales
 @app.route('/mostrar_usuarios', methods=['GET'])
 def mostrar_usuarios():
     try:
@@ -333,7 +445,7 @@ def mostrar_usuarios():
         return jsonify(resultado)
     
     except Exception as e:
-        return f'Error al ejecutar el comando: {e}'  #mongodb usersinfo <username>
+        return f'Error al ejecutar el comando: {e}'  
 
 
 @app.route('/usuarios', methods=['POST'])
@@ -344,7 +456,7 @@ def createUser():
 @app.route('/users', methods=['GET'])
 def getUsers():
     users = []
-    for doc in db.users.find(): #db.find() => db.Login.find();
+    for doc in db.users.find():
         #if 'userId' in doc:
             users.append({
                 '_id': str(ObjectId(doc['_id'])),
@@ -376,5 +488,7 @@ def updateUser(id):
     return jsonify({'msg': 'User Updated'})
 
 
+# Establecemos dónde queremos desplegar la aplicación Flask.
 if __name__ =="__main__":
-    app.run(host='localhost', port=5000, debug=True) #acá se establece dónde se desea ejecutar la aplicación de flask.
+    app.run(host='localhost', port=5000, debug=True) 
+

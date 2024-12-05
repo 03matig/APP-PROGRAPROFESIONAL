@@ -1,6 +1,23 @@
-.titulo {
+.separacion {
     padding-top: 3.5rem;
-    margin-top: 1rem;
+    margin-top: 2.5rem;
+    margin-bottom: 30px;
+    margin-left: 23%;
+    margin-right: 23%;
+}
+
+#page-navbar{
+    color: #657187;
+    font-family: Inherit;
+    line-height: 1.571;
+    text-transform: Inherit;
+    letter-spacing: 0rem;
+    color: #757575;
+    font-size: 12px;
+    line-height: 14px;
+    font-weight: 400;
+    margin-bottom: 24px;
+
 }
 
 /* Contenedor para la tabla */
@@ -57,4 +74,17 @@ button:hover {
 /* Estilo para las celdas con la capacidad */
 .table-capacity {
     text-align: center;
+}
+
+/* Estilo para el botón de descarga deshabilitado */
+button[disabled] {
+    background-color: #d3d3d3;
+    cursor: not-allowed;
+}
+
+/* Estilo para el mensaje en rojo */
+.error-message {
+    color: red;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
 }

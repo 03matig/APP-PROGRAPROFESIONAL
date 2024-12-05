@@ -1,0 +1,78 @@
+.center-div{
+    max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .dashboard-navbar {
+    flex: 0 1 auto;  /* Asegura que la barra de navegación tome su espacio adecuado */
+  }
+  
+  .dashboard-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;  /* Para evitar el desbordamiento */
+  }
+  
+  
+  .sidenav {
+    flex: 0 0 250px;  /* Define un ancho fijo para la barra lateral */
+    height: calc(100vh - 70px);  /* Ajusta la altura según la altura de la barra de navegación */
+    overflow-y: auto;  /* Permite el desplazamiento si el contenido es demasiado alto */
+    position: fixed;  /* Fija la barra lateral */
+    top: 70px;  /* Ajusta según la altura de la barra de navegación */
+    left: 0;
+    bottom: 0;
+  }
+  
+  .dashboard-main {
+    flex: 1;
+    margin-left: 250px;  /* Asegura que el contenido principal no esté debajo de la barra lateral */
+    padding: 20px;
+    overflow-y: auto;  /* Permite el desplazamiento del contenido principal */
+  }
+  
+  .charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  
+  .nav {
+    padding: 0;
+  }
+  
+  .nav-item {
+    list-style: none;
+  }
+  
+  .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;  /* Centra el contenido horizontalmente */
+    padding: 10px 20px;
+    color: #fff;
+    text-decoration: none;
+  }
+  
+  .icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+  }
+  
+  .nav-link-text {
+    flex: 1;
+    text-align: center;  /* Centra el texto */
+  }
+  

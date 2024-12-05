@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import './styles/VistaCrearZoom_styles.css';
 
@@ -12,6 +12,35 @@ export const VistaCrearZoom = () => {
     });
     const [meetingData, setMeetingData] = useState(null);
     const [error, setError] = useState(null);
+    const [usuarios, setUsuarios] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [nombreAlumno, setNombreAlumno] = useState('');
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const fetchUsuarios = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/pasantias_pendientes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al obtener usuarios');
+                }
+
+                const data = await response.json();
+                setUsuarios(data);
+            } catch (error) {
+                console.error('Error al obtener usuarios:', error);
+                setError(error.message);
+            }
+        };
+
+        fetchUsuarios();
+    }, []);
 
     const handleNavigation = () => {
         navigate('/Course');
@@ -22,9 +51,16 @@ export const VistaCrearZoom = () => {
         setMeetingDetails({ ...meetingDetails, [name]: value });
     };
 
+    const handleSelectUsuario = (nombre) => {
+        const topic = `Defensa de Pasantía ${nombre}`;
+        setMeetingDetails({ ...meetingDetails, topic });
+        setNombreAlumno(nombre);
+        setShowDropdown(false);
+    };
+
     const createMeeting = async () => {
         try {
-            const response = await fetch('http://localhost:5000/zoom/create_meeting', {
+            const response = await fetch('http://40.76.107.0:5000/zoom/create_meeting', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -32,21 +68,30 @@ export const VistaCrearZoom = () => {
                 credentials: 'include', // Incluye las credenciales (cookies)
                 body: JSON.stringify(meetingDetails)
             });
-    
+            console.debug('Sending request to backend');
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Error al crear la reunión');
             }
-    
+
             const data = await response.json();
             setMeetingData(data);
             setError(null); // Limpia cualquier error previo
-            
+
+            // Postea el link de zoom en la colección "Comisiones"
+            await fetch('http://40.76.107.0:5000/post_zoom_link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ nombre_alumno: nombreAlumno, zoom_link: data.join_url })
+            });
+
         } catch (error) {
             console.error('Error al crear la reunión:', error);
             setError(error.message);
             if (error.message.includes("Not authenticated")) {
-                window.location.href = "http://localhost:5000/zoom/login";
+                window.location.href = "http://40.76.107.0:5000/zoom/login";
             }
         }
     };
@@ -96,7 +141,32 @@ export const VistaCrearZoom = () => {
                                     <form onSubmit={(e) => { e.preventDefault(); createMeeting(); }}>
                                         <label>
                                             Tema:
-                                            <input type="text" name="topic" value={meetingDetails.topic} onChange={handleChange} required />
+                                            <div className="input-group">
+                                                <input
+                                                    type="text"
+                                                    name="topic"
+                                                    value={meetingDetails.topic}
+                                                    onChange={handleChange}
+                                                    required
+                                                    className="form-control"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-secondary dropdown-toggle"
+                                                    onClick={() => setShowDropdown(!showDropdown)}
+                                                >
+                                                    ▼
+                                                </button>
+                                                {showDropdown && (
+                                                    <ul className="dropdown-menu show" ref={dropdownRef}>
+                                                        {usuarios.map((usuario) => (
+                                                            <li key={usuario.id} className="dropdown-item" onClick={() => handleSelectUsuario(usuario.nombre)}>
+                                                                Defensa de Pasantía {usuario.nombre}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </div>
                                         </label>
                                         <br />
                                         <label>
